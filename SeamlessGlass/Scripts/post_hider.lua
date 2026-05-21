@@ -1,4 +1,5 @@
 local Config = require("config")
+local U      = require("unreal_util")
 local PostHider = {}
 
 -- Stores original materials per actor so showPosts can restore them.
@@ -6,25 +7,33 @@ local PostHider = {}
 local originals = {}
 
 local function getPostComponents(actor)
-    -- GetComponentsByClass accepts nil in both tests (mock ignores it) and
-    -- in-game (UE4SS finds StaticMeshComponent class lazily).
+    actor = U.unwrap(actor)
+    if not actor then return {} end
     local cls = FindFirstOf("StaticMeshComponent")
     cls = cls and cls:GetClass() or nil
-    local all = actor:GetComponentsByClass(cls)
-    if type(all) ~= "table" then return {} end
+    local ok, all = pcall(function() return actor:GetComponentsByClass(cls) end)
+    if not ok or type(all) ~= "table" then return {} end
 
     local posts = {}
     for _, comp in ipairs(all) do
-        local name = comp:GetFName():ToString()
-        if name:find(Config.POST_COMP_NAME_PATTERN, 1, true) then
-            table.insert(posts, comp)
+        local c = U.unwrap(comp)
+        if c then
+            local fname = U.safeCall(c, "GetFName")
+            fname = U.unwrap(fname)
+            local name = fname and U.safeCall(fname, "ToString")
+            if name and name:find(Config.POST_COMP_NAME_PATTERN, 1, true) then
+                table.insert(posts, c)
+            end
         end
     end
     return posts
 end
 
 function PostHider.hidePosts(actor)
-    local id = actor:GetFullName()
+    actor = U.unwrap(actor)
+    if not actor then return end
+    local id = U.fullName(actor)
+    if not id then return end
     originals[id] = originals[id] or {}
 
     local mat = StaticFindObject(Config.TRANSPARENT_MAT_PATH)
@@ -34,28 +43,36 @@ function PostHider.hidePosts(actor)
     end
 
     for _, comp in ipairs(getPostComponents(actor)) do
-        local name = comp:GetFName():ToString()
-        if not originals[id][name] then
-            originals[id][name] = comp:GetMaterial(0)
+        local fname = U.safeCall(comp, "GetFName")
+        local name = fname and U.safeCall(U.unwrap(fname), "ToString")
+        if name then
+            if not originals[id][name] then
+                local cur = U.safeCall(comp, "GetMaterial", 0)
+                originals[id][name] = U.unwrap(cur)
+            end
+            pcall(function() comp:SetMaterial(0, mat) end)
         end
-        comp:SetMaterial(0, mat)
     end
 end
 
 function PostHider.showPosts(actor)
-    local id = actor:GetFullName()
-    if not originals[id] then return end
+    actor = U.unwrap(actor)
+    if not actor then return end
+    local id = U.fullName(actor)
+    if not id or not originals[id] then return end
 
     for _, comp in ipairs(getPostComponents(actor)) do
-        local name = comp:GetFName():ToString()
-        local orig = originals[id][name]
-        if orig then
-            comp:SetMaterial(0, orig)
+        local fname = U.safeCall(comp, "GetFName")
+        local name = fname and U.safeCall(U.unwrap(fname), "ToString")
+        if name then
+            local orig = originals[id][name]
+            if orig then
+                pcall(function() comp:SetMaterial(0, orig) end)
+            end
         end
     end
 end
 
--- Hide posts if the piece has any neighbour; restore them if isolated.
 function PostHider.reevaluate(actor, hasAnyNeighbour)
     if hasAnyNeighbour then
         PostHider.hidePosts(actor)

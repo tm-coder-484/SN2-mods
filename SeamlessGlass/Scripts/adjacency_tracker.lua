@@ -1,64 +1,90 @@
 local Config = require("config")
+local U      = require("unreal_util")
 local AdjacencyTracker = {}
 
 -- neighbours[actorId] = { ref = actor, adjacent = { [neighbourId] = actor } }
 local neighbours = {}
 
 local function actorId(actor)
-    return actor:GetFullName()
+    actor = U.unwrap(actor)
+    if not actor then return nil end
+    return U.fullName(actor)
 end
 
 local function isWindowPiece(actor)
-    local name = actor:GetClass():GetFName():ToString()
+    actor = U.unwrap(actor)
+    if not actor then return false end
+    local name = U.className(actor)
+    if not name then return false end
     for _, cls in ipairs(Config.WINDOW_PIECE_CLASSES) do
         if name:find(cls, 1, true) then return true end
     end
     return false
 end
 
+local function actorPos(actor)
+    actor = U.unwrap(actor)
+    if not actor then return nil end
+    local ok, pos = pcall(function() return actor:K2_GetActorLocation() end)
+    if ok and pos then
+        local p = U.unwrap(pos)
+        return {
+            X = U.tonum(p.X, 0),
+            Y = U.tonum(p.Y, 0),
+            Z = U.tonum(p.Z, 0),
+        }
+    end
+    return nil
+end
+
 -- Returns window actors from candidates that are within SNAP_DISTANCE.
--- candidateOverride: list of actors (used in unit tests to bypass FindAllOf).
--- In-game, pass nil to auto-discover via FindAllOf.
 local function findNearby(origin, candidateOverride)
     local candidates = candidateOverride or FindAllOf("Actor") or {}
-    local origin_pos = origin:GetActorLocation()
+    local origin_pos = actorPos(origin)
+    if not origin_pos then return {} end
     local result = {}
     for _, candidate in ipairs(candidates) do
-        if candidate ~= origin and isWindowPiece(candidate) then
-            local cp = candidate:GetActorLocation()
-            local dx = cp.X - origin_pos.X
-            local dy = cp.Y - origin_pos.Y
-            local dz = cp.Z - origin_pos.Z
-            local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-            if dist <= Config.SNAP_DISTANCE then
-                table.insert(result, candidate)
+        local c = U.unwrap(candidate)
+        if c and c ~= U.unwrap(origin) and isWindowPiece(c) then
+            local cp = actorPos(c)
+            if cp then
+                local dx = cp.X - origin_pos.X
+                local dy = cp.Y - origin_pos.Y
+                local dz = cp.Z - origin_pos.Z
+                local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+                if dist <= Config.SNAP_DISTANCE then
+                    table.insert(result, c)
+                end
             end
         end
     end
     return result
 end
 
--- Register a newly placed piece. Returns list of discovered neighbours.
--- candidateOverride: optional actor list for unit tests.
 function AdjacencyTracker.onPieceBuilt(actor, candidateOverride)
-    local id = actorId(actor)
-    neighbours[id] = { ref = actor, adjacent = {} }
+    local a = U.unwrap(actor)
+    local id = actorId(a)
+    if not id then return {} end
+    neighbours[id] = { ref = a, adjacent = {} }
 
-    local nearby = findNearby(actor, candidateOverride)
+    local nearby = findNearby(a, candidateOverride)
     for _, neighbour in ipairs(nearby) do
         local nid = actorId(neighbour)
-        neighbours[id].adjacent[nid] = neighbour
-        if neighbours[nid] then
-            neighbours[nid].adjacent[id] = actor
+        if nid then
+            neighbours[id].adjacent[nid] = neighbour
+            if neighbours[nid] then
+                neighbours[nid].adjacent[id] = a
+            end
         end
     end
 
     return nearby
 end
 
--- Unregister a deconstructed piece. Returns its former neighbours.
 function AdjacencyTracker.onPieceDeconstructed(actor)
-    local id = actorId(actor)
+    local a = U.unwrap(actor)
+    local id = actorId(a)
+    if not id then return {} end
     local former = {}
     if neighbours[id] then
         for nid, nactor in pairs(neighbours[id].adjacent) do
@@ -74,7 +100,7 @@ end
 
 function AdjacencyTracker.getNeighbours(actor)
     local id = actorId(actor)
-    if not neighbours[id] then return {} end
+    if not id or not neighbours[id] then return {} end
     local result = {}
     for _, v in pairs(neighbours[id].adjacent) do
         table.insert(result, v)
@@ -84,12 +110,11 @@ end
 
 function AdjacencyTracker.hasNeighbour(actor)
     local id = actorId(actor)
-    if not neighbours[id] then return false end
+    if not id or not neighbours[id] then return false end
     for _ in pairs(neighbours[id].adjacent) do return true end
     return false
 end
 
--- Test helper only — wipes all state between test cases
 function AdjacencyTracker._reset()
     neighbours = {}
 end
