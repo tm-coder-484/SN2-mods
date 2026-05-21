@@ -66,8 +66,10 @@ Mariana is the SN2 modding framework SeamlessGlass is built on.
    Mods not listed in `mods.txt` will not load.
 3. Launch SN2. The UE4SS GUI console should show:
    ```
-   [Lua] [Mariana] v1.1.0 initialised for Subnautica2
-   [SeamlessGlass] loaded
+   [Mariana] v1.1.0 initialised for Subnautica2
+   [SeamlessGlass] initialising...
+   [SeamlessGlass] surface unlock hooks registered
+   [SeamlessGlass] ready.
    ```
    If you see errors instead, skip to the Troubleshooting section at the bottom.
 
