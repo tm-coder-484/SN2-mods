@@ -16,8 +16,11 @@ Allows window base pieces to be placed on **floors and ceilings**, and removes t
 UE4SS is the mod loader that makes all of this work.
 
 1. Go to https://github.com/UE4SS-RE/RE-UE4SS/releases and download the latest `zDEV-UE4SS_v*.zip`
-2. Open the zip and extract **all files** into your SN2 game folder — the one that contains `Subnautica2.exe`
-   - After extracting, `Binaries/Win64/dwmapi.dll` should exist next to `Subnautica2.exe`
+2. Open the zip and extract **all files** into the `Binaries/Win64/` folder inside your SN2 game folder — **not** the root folder where `Subnautica2.exe` sits, but the subfolder:
+   ```
+   [SN2 game folder]/Binaries/Win64/
+   ```
+   After extracting, `dwmapi.dll` should exist in that `Win64/` folder alongside `Subnautica2-Win64-Shipping.exe`.
 3. Open `Binaries/Win64/UE4SS-settings.ini` in Notepad and change these two lines:
    ```
    ConsoleEnabled = 1
