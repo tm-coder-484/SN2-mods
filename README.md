@@ -194,6 +194,12 @@ If anything doesn't work, check the UE4SS console for error messages and compare
 **Posts re-appear after reloading a save**
 - This is a known v1 limitation — adjacency state is rebuilt on the next build/deconstruct action. A full fix is noted in the plan for a future update.
 
+**Mariana logs `cannot open Mods/Mariana/Scripts/api/core.lua` even though api files are present**
+- Mariana's `main.lua` hardcodes the path `Mods/Mariana/Scripts/`, which only works on the legacy UE4SS layout. The experimental UE4SS build uses `ue4ss/Mods/Mariana/Scripts/` instead. Open `ue4ss/Mods/Mariana/Scripts/main.lua` and change the line that returns `"Mods/Mariana/Scripts/"` to `"ue4ss/Mods/Mariana/Scripts/"`.
+
+**`Failed to find function /Script/Subnautica2.BuilderComponent:...`**
+- Game update changed internal class names. To find the new paths: open the UE4SS console in-game and use the `dump_sdk` and `dump_uht_compatible_headers` commands. Search the dumped headers for class names containing "Builder", "BaseEdit", or "Construct". Update the three `Config.BUILDER_*_FUNC` paths in `SeamlessGlass/Scripts/config.lua` to match.
+
 ---
 
 ## Updating after a game update

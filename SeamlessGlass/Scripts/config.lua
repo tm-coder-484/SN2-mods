@@ -1,24 +1,32 @@
 local Config = {}
 
--- Replace each string value with what you find in the UE4SS SDK dump.
--- The examples shown use plausible names based on SN1's class conventions.
+-- Function paths verified against Subnautica 2 Early Access build CL-113109 (May 2026)
+-- via a runtime UFunction probe. SN2 uses the Gameplay Ability System, not a simple
+-- BuilderComponent — placement is a Blueprint ability (GA_BaseEdit) and removal is
+-- a server RPC on SN2BaseEditAbility.
+--
+-- If a game update breaks these paths, build a probe mod that enumerates loaded
+-- UFunctions and search for "Build", "Construct", "BaseEdit", or "Place" candidates.
 
--- Full UFunction path for the builder's face-validity check
-Config.BUILDER_VALIDITY_FUNC = "/Script/Subnautica2.BuilderComponent:IsValidBuildSurface"
+-- Face-validity check on the builder ability
+Config.BUILDER_VALIDITY_FUNC = "/Script/Subnautica2.SN2BuilderAbility:HasValidConstructTarget"
 
--- Full UFunction path for piece placement
-Config.BUILDER_PLACE_FUNC = "/Script/Subnautica2.BuilderComponent:PlacePiece"
+-- Blueprint ability that actually applies / spawns the placed piece
+Config.BUILDER_PLACE_FUNC = "/Game/Blueprints/AbilitySystem/Abilities/Tools/Builder/BuilderActions/PlaceGhost/GA_BaseEdit.GA_BaseEdit_C:TryApply"
 
--- Full UFunction path for piece removal/deconstruction
-Config.BUILDER_REMOVE_FUNC = "/Script/Subnautica2.BuilderComponent:RemovePiece"
+-- Server-side deconstruction RPC
+Config.BUILDER_REMOVE_FUNC = "/Script/Subnautica2.SN2BaseEditAbility:ServerDeconstructActor"
 
--- Class names of all buildable window pieces (as returned by GetFName():ToString())
+-- Class names of all buildable window pieces (as returned by GetFName():ToString()).
+-- These are placeholders until verified against the live game; check the probe output
+-- for actors whose class name contains "Window" once a window piece is in the world.
 Config.WINDOW_PIECE_CLASSES = {
     "BP_Window_C",
     "BP_WindowLarge_C",
 }
 
--- Substring present in all structural post mesh component FNames
+-- Substring present in all structural post mesh component FNames.
+-- Verify in-game via DumpComponents on a placed window actor.
 Config.POST_COMP_NAME_PATTERN = "PostMesh"
 
 -- Asset path of the transparent material created in the pak step
