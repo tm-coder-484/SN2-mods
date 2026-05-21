@@ -9,8 +9,9 @@ RegisterInitGameStatePostHook(function()
     SurfaceUnlock.register()
 
     -- After a piece is placed: track it and hide posts on it + its new neighbours
+    -- UE4SS requires both pre- and post- hooks to be functions; we no-op the pre-hook.
     RegisterHook(Config.BUILDER_PLACE_FUNC,
-        nil,
+        function() end,
         function(self, ReturnValue, Params)
             local placed = ReturnValue and ReturnValue.ReturnValue
             if not placed then return end

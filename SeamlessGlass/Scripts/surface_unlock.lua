@@ -18,8 +18,9 @@ function SurfaceUnlock.register()
 
     -- Override face-validity to accept horizontal surfaces for window pieces.
     -- The post-hook fires after the original check; we can force the return to true.
+    -- UE4SS requires both pre- and post- hooks to be functions; we no-op the pre-hook.
     RegisterHook(Config.BUILDER_VALIDITY_FUNC,
-        nil,
+        function() end,
         function(self, ReturnValue, Params)
             if not isWindowPiece(Params and Params.Buildable) then return end
 
