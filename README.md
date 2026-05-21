@@ -11,22 +11,30 @@ Allows window base pieces to be placed on **floors and ceilings**, and removes t
 
 ---
 
-## Step 1 — Install UE4SS
+## Step 1 — Install UE4SS (experimental build)
 
-UE4SS is the mod loader that makes all of this work.
+UE4SS is the mod loader. **You must use the experimental build, not the stable v3.0.1** — the stable release doesn't include UE 5.6 signatures, and SN2 won't load mods without them.
 
-1. Go to https://github.com/UE4SS-RE/RE-UE4SS/releases and download the latest `zDEV-UE4SS_v*.zip`
-2. Open the zip and extract **all files** into the `Binaries/Win64/` folder inside your SN2 game folder — **not** the root folder where `Subnautica2.exe` sits, but the subfolder:
-   ```
-   [SN2 game folder]/Binaries/Win64/
-   ```
-   After extracting, `dwmapi.dll` should exist in that `Win64/` folder alongside `Subnautica2-Win64-Shipping.exe`.
-3. Open `Binaries/Win64/UE4SS-settings.ini` in Notepad and change these two lines:
-   ```
+1. Go to https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest
+2. Download `UE4SS_v3.0.1-...-experimental-latest.zip` (the one with "experimental" in the name)
+3. Extract **all files** into `[SN2 game folder]/Binaries/Win64/` — after extracting, you should have a new `ue4ss/` folder and a `dwmapi.dll` file in `Binaries/Win64/` alongside `Subnautica2-Win64-Shipping.exe`
+4. Open `Binaries/Win64/ue4ss/UE4SS-settings.ini` and make sure these sections exist (add or update as needed):
+   ```ini
+   [General]
+   bUseUObjectArrayCache = false
+
+   [EngineVersionOverride]
+   MajorVersion = 5
+   MinorVersion = 6
+
+   [Debug]
    ConsoleEnabled = 1
    GuiConsoleEnabled = 1
+   GuiConsoleVisible = 1
+   GraphicsAPI = dx11
    ```
-4. Launch SN2. A small UE4SS console window should appear. Close the game again.
+   The `bUseUObjectArrayCache = false` and `[EngineVersionOverride]` lines are **critical** — without them, UE4SS scan will time out.
+5. Launch SN2. A floating UE4SS GUI console window should appear with no red errors. Close the game.
 
 ---
 
@@ -46,12 +54,19 @@ Mariana is the SN2 modding framework SeamlessGlass is built on.
 
 ## Step 3 — Deploy the mod files
 
-1. Copy the `SeamlessGlass/` folder (from this zip/folder your friend sent you) into:
+1. Copy the `SeamlessGlass/` folder into:
    ```
    [SN2 game folder]/Binaries/Win64/ue4ss/Mods/SeamlessGlass/
    ```
-2. Launch SN2. Open the UE4SS console window (press `~` in-game). You should see:
+2. Open `Binaries/Win64/ue4ss/Mods/mods.txt` in Notepad and add these lines (Mariana must come before SeamlessGlass):
    ```
+   Mariana : 1
+   SeamlessGlass : 1
+   ```
+   Mods not listed in `mods.txt` will not load.
+3. Launch SN2. The UE4SS GUI console should show:
+   ```
+   [Lua] [Mariana] v1.1.0 initialised for Subnautica2
    [SeamlessGlass] loaded
    ```
    If you see errors instead, skip to the Troubleshooting section at the bottom.
